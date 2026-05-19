@@ -1,0 +1,19 @@
+# Objetos e executável
+*.o
+*.obj
+huffman
+huffman.exe
+
+# Saídas de teste
+*.huff
+out_*.txt
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Sistema
+.DS_Store
+Thumbs.db

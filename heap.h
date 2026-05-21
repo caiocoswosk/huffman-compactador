@@ -18,4 +18,35 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct elemento{
+    void *dado;
+    int chave;
+} Elemento;
+
+typedef struct heap{
+    Elemento *vetor;
+    int tam;
+    int capacidade;
+} Heap;
+
+Heap *criaFila(int capacidade);
+
+void insere(Heap *h, void *dado, int chave);
+
+Elemento extrairMinimo(Heap *h);
+
+Elemento minimo(Heap *h);
+
+void decrementa(Heap *h, int indice, int novaChave);
+
+void deleta(Heap *h, int indice);
+
+void imprimir(Heap *h);
+
+void liberaHeap(Heap *h);
+
+
 #endif /* HEAP_H */

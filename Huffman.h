@@ -20,4 +20,25 @@
 #ifndef HUFFMAN_H
 #define HUFFMAN_H
 
+typedef struct noHuffman NoHuffman;
+
+struct noHuffman {
+    unsigned char caractere;
+    int frequencia;
+    NoHuffman *esq;
+    NoHuffman *dir;
+};
+
+void inicializarFrequencias(int frequencias[256]);
+
+int calcularFrequencias(const char *nomeArquivo, int frequencias[256]);
+
+void imprimirFrequencias(int frequencias[256]);
+
+NoHuffman *criarNo(unsigned char caractere, int frequencia, NoHuffman *esq, NoHuffman *dir);
+
+int ehFolha(NoHuffman *no);
+
+void liberarArvore(NoHuffman *raiz);
+
 #endif /* HUFFMAN_H */

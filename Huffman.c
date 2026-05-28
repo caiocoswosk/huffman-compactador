@@ -16,5 +16,75 @@
  *            das tarefas T03, T07, T09, T10, T12 e T13.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "Huffman.h"
 #include "heap.h"
+
+void inicializarFrequencias(int frequencias[256]) {
+    for (int i=0; i<256; i++) {
+        frequencias[i] = 0;
+    }
+}
+
+int calcularFrequencias(const char *nomeArquivo, int frequencias[256]) {
+    FILE *arquivo = fopen(nomeArquivo, "rb");   
+    if (arquivo == NULL) {
+        printf("Erro ao abrir arquivo.");
+        return 0;
+    }
+
+    inicializarFrequencias(frequencias);
+
+    int c;
+    while ((c = fgetc(arquivo)) != EOF) {
+        frequencias[(unsigned char)c]++;
+    }
+
+    fclose(arquivo);
+    return 1;
+}
+
+void imprimirFrequencias(int frequencias[256]) {
+    for (int i=0; i<256; i++) {
+        if (frequencias[i] > 0) {
+            printf("%d", i);
+
+            if (i >= 32 && i <= 126) {
+                printf(" ('%c')", i);
+            }
+
+            printf(": %d\n", frequencias[i]);
+        }
+    }
+}
+
+NoHuffman *criarNo(unsigned char caractere, int frequencia, NoHuffman *esq, NoHuffman *dir) {
+    NoHuffman *novo = malloc(sizeof(NoHuffman));
+    if (novo == NULL) {
+        printf("Erro ao alocar no de Huffman.");
+        return NULL;
+    }
+
+    novo->caractere = caractere;
+    novo->frequencia = frequencia;
+    novo->esq = esq;
+    novo->dir = dir;
+
+    return novo;
+}
+
+int ehFolha(NoHuffman *no) {
+    return (no != NULL && no->esq == NULL && no->dir == NULL);
+}
+
+void liberarArvore(NoHuffman *raiz) {
+    if (raiz == NULL) {
+        return;
+    }
+
+    liberarArvore(raiz->esq);
+    liberarArvore(raiz->dir);
+
+    free(raiz);
+}

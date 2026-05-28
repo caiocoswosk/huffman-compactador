@@ -39,6 +39,8 @@ NoHuffman *criarNo(unsigned char caractere, int frequencia, NoHuffman *esq, NoHu
 
 int ehFolha(NoHuffman *no);
 
+NoHuffman *construirArvoreHuffman(int frequencias[256]);
+
 void liberarArvore(NoHuffman *raiz);
 
 #endif /* HUFFMAN_H */

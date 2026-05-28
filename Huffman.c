@@ -78,6 +78,66 @@ int ehFolha(NoHuffman *no) {
     return (no != NULL && no->esq == NULL && no->dir == NULL);
 }
 
+NoHuffman *construirArvoreHuffman(int frequencias[256]) {
+    int qtdCaracteres = 0;
+    for (int i = 0; i < 256; i++) {
+        if (frequencias[i] > 0) {
+            qtdCaracteres++;
+        }
+    }
+
+    if (qtdCaracteres == 0) {
+        return NULL;
+    }
+
+    int capacidade = (qtdCaracteres == 1) ? 2 : qtdCaracteres;
+    Heap *heap = criaFila(capacidade);
+
+    for (int i = 0; i < 256; i++) {
+        if (frequencias[i] > 0) {
+            NoHuffman *folha = criarNo((unsigned char)i, frequencias[i], NULL, NULL);
+            if (folha == NULL) {
+                liberaHeap(heap);
+                return NULL;
+            }
+            insere(heap, folha, frequencias[i]);
+        }
+    }
+
+    /* Caso degenerado: arquivo com apenas 1 caractere distinto. Envolvemos a
+     * folha em um no interno para que o codigo do caractere seja "0" e nao
+     * uma string vazia. */
+    if (qtdCaracteres == 1) {
+        Elemento unico = extrairMinimo(heap);
+        NoHuffman *folha = (NoHuffman *)unico.dado;
+        NoHuffman *raiz = criarNo(0, folha->frequencia, folha, NULL);
+        liberaHeap(heap);
+        return raiz;
+    }
+
+    while (heap->tam > 1) {
+        Elemento eA = extrairMinimo(heap);
+        Elemento eB = extrairMinimo(heap);
+        NoHuffman *a = (NoHuffman *)eA.dado;
+        NoHuffman *b = (NoHuffman *)eB.dado;
+
+        int somaFreq = a->frequencia + b->frequencia;
+        NoHuffman *interno = criarNo(0, somaFreq, a, b);
+        if (interno == NULL) {
+            liberaHeap(heap);
+            return NULL;
+        }
+
+        insere(heap, interno, somaFreq);
+    }
+
+    Elemento eRaiz = extrairMinimo(heap);
+    NoHuffman *raiz = (NoHuffman *)eRaiz.dado;
+    liberaHeap(heap);
+
+    return raiz;
+}
+
 void liberarArvore(NoHuffman *raiz) {
     if (raiz == NULL) {
         return;

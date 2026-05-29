@@ -12,8 +12,7 @@
  * Arquivo: Huffman.c
  * Descricao: Implementacao das funcoes para compactacao e
  *            descompactacao de arquivos de texto usando o
- *            algoritmo de Huffman. Sera preenchida ao longo
- *            das tarefas T03, T07, T09, T10, T12 e T13.
+ *            algoritmo de Huffman.
  */
 
 #include <stdio.h>
@@ -91,8 +90,7 @@ NoHuffman *construirArvoreHuffman(int frequencias[256]) {
         return NULL;
     }
 
-    int capacidade = (qtdCaracteres == 1) ? 2 : qtdCaracteres;
-    Heap *heap = criaFila(capacidade);
+    Heap *heap = criaFila(qtdCaracteres);
 
     for (int i = 0; i < 256; i++) {
         if (frequencias[i] > 0) {
@@ -103,17 +101,6 @@ NoHuffman *construirArvoreHuffman(int frequencias[256]) {
             }
             insere(heap, folha, frequencias[i]);
         }
-    }
-
-    /* Caso degenerado: arquivo com apenas 1 caractere distinto. Envolvemos a
-     * folha em um no interno para que o codigo do caractere seja "0" e nao
-     * uma string vazia. */
-    if (qtdCaracteres == 1) {
-        Elemento unico = extrairMinimo(heap);
-        NoHuffman *folha = (NoHuffman *)unico.dado;
-        NoHuffman *raiz = criarNo(0, folha->frequencia, folha, NULL);
-        liberaHeap(heap);
-        return raiz;
     }
 
     while (heap->tam > 1) {

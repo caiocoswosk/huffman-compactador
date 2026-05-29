@@ -12,7 +12,6 @@
  * Arquivo: heap.h
  * Descricao: Interface da fila de prioridades generica
  *            implementada como heap binario de minimo.
- *            A implementacao detalhada sera feita na tarefa T02.
  */
 
 #ifndef HEAP_H

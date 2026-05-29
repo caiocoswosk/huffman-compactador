@@ -13,8 +13,6 @@
  * Descricao: Interface das funcoes para compactacao e
  *            descompactacao de arquivos de texto usando
  *            o algoritmo de Huffman.
- *            A implementacao detalhada sera feita nas tarefas T03, T07,
- *            T09, T10, T12 e T13.
  */
 
 #ifndef HUFFMAN_H

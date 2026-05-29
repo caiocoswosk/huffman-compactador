@@ -11,22 +11,26 @@
  *
  * Arquivo: heap.c
  * Descricao: Implementacao da fila de prioridades generica
- *            como heap binario de minimo. Sera preenchida na tarefa T02.
+ *            como heap binario de minimo.
  */
 
+#include <limits.h>
 #include "heap.h"
 
-// Funções auxiliares
+/* Heap 1-based: a raiz fica em vetor[1] e os indices validos sao 1..tam.
+ * O slot vetor[0] e reservado e nao e utilizado, seguindo a convencao
+ * apresentada na aula 03 (slide 3). */
+
 int pai(int i){
-    return ((i - 1)/2);
+    return i / 2;
 }
 
 int esquerda(int i){
-    return (2* i+1);
+    return 2 * i;
 }
 
 int direita(int i){
-    return (2* i+2);
+    return 2 * i + 1;
 }
 
 void troca(Elemento *a, Elemento *b){
@@ -37,36 +41,35 @@ void troca(Elemento *a, Elemento *b){
     *b = aux;
 }
 
-// Função para fazer um elemento descer até encontrar sua posição correta
+/* MinHeapify: faz o elemento em 'indice' descer ate restaurar
+ * a propriedade de heap minimo. Equivalente ao procedimento da
+ * aula 03 (slide 9) adaptado para heap minimo. */
 void desceFila(Heap *h, int indice){
     int menor, esq, dir;
 
-    menor = indice;
     esq = esquerda(indice);
     dir = direita(indice);
+    menor = indice;
 
-    // avalia filho esquerdo
-    if((esq < h->tam) && (h->vetor[esq].chave < h->vetor[menor].chave)){
+    if(esq <= h->tam && h->vetor[esq].chave < h->vetor[menor].chave){
         menor = esq;
     }
 
-    // avalia filho direito
-    if((dir < h->tam) && (h->vetor[dir].chave < h->vetor[menor].chave)){
+    if(dir <= h->tam && h->vetor[dir].chave < h->vetor[menor].chave){
         menor = dir;
     }
 
-    // Quando encontra o menor filho ocorre a troca
     if(menor != indice){
         troca(&h->vetor[indice], &h->vetor[menor]);
         desceFila(h, menor);
     }
 }
 
+/* Sift-up usado por DecrementaChave (aula 03, slide 17). */
 void sobeFila(Heap *h, int indice){
-    while(indice > 0 && h->vetor[pai(indice)].chave > h->vetor[indice].chave){
+    while(indice > 1 && h->vetor[pai(indice)].chave > h->vetor[indice].chave){
         troca(&h->vetor[pai(indice)], &h->vetor[indice]);
         indice = pai(indice);
-
     }
 }
 
@@ -79,7 +82,9 @@ Heap *criaFila(int capacidade){
         exit(1);
     }
 
-    h->vetor = (Elemento *)malloc(capacidade * sizeof(Elemento));
+    /* Aloca capacidade+1 slots para acomodar a indexacao 1-based:
+     * vetor[0] fica reservado e usamos vetor[1..capacidade]. */
+    h->vetor = (Elemento *)malloc((capacidade + 1) * sizeof(Elemento));
 
     if(h->vetor == NULL){
         printf("Erro de alocacao.\n");
@@ -93,27 +98,24 @@ Heap *criaFila(int capacidade){
     return h;
 }
 
+/* InserirHeapMinimo (aula 03, slide 17): insere o elemento com chave
+ * +infinito no fim do heap e em seguida chama DecrementaChave para
+ * trazer a chave real ao seu lugar. */
 void insere(Heap *h, void *dado, int chave){
-    int i;
-
     if(h->tam == h->capacidade){
         printf("Heap em sua capacidade maxima\n");
         return;
     }
 
-    i = h->tam;
-
-    h->vetor[i].dado = dado;
-    h->vetor[i].chave = chave;
-
     h->tam++;
+    h->vetor[h->tam].dado = dado;
+    h->vetor[h->tam].chave = INT_MAX;
 
-    sobeFila(h, i);
-
+    decrementa(h, h->tam, chave);
 }
 
-Elemento minimo(Heap *h){ // não sei será útil 
-    if(h->tam <= 0){
+Elemento minimo(Heap *h){
+    if(h->tam < 1){
         printf("Heap vazio\n");
 
         Elemento vz;
@@ -123,11 +125,11 @@ Elemento minimo(Heap *h){ // não sei será útil
         return vz;
     }
 
-    return h->vetor[0];
+    return h->vetor[1];
 }
 
 Elemento extrairMinimo(Heap *h){
-    if (h->tam <= 0){
+    if(h->tam < 1){
         printf("Heap vazio\n");
 
         Elemento vz;
@@ -137,19 +139,18 @@ Elemento extrairMinimo(Heap *h){
         return vz;
     }
 
-    Elemento raiz = h->vetor[0];
+    Elemento raiz = h->vetor[1];
 
-    h->vetor[0] = h->vetor[h->tam-1];
+    h->vetor[1] = h->vetor[h->tam];
     h->tam--;
 
-    desceFila(h, 0);
+    desceFila(h, 1);
 
     return raiz;
-
 }
 
 void decrementa(Heap *h, int indice, int novaChave){
-    if(indice >= h->tam){
+    if(indice < 1 || indice > h->tam){
         printf("Indice invalido\n");
         return;
     }
@@ -165,18 +166,17 @@ void decrementa(Heap *h, int indice, int novaChave){
 }
 
 void deleta(Heap *h, int indice){
-    if(indice >= h->tam){
+    if(indice < 1 || indice > h->tam){
         printf("Indice invalido\n");
         return;
     }
 
-    h->vetor[indice] = h->vetor[h->tam - 1];
-
+    h->vetor[indice] = h->vetor[h->tam];
     h->tam--;
 
-    if(indice > 0 && h->vetor[indice].chave < h->vetor[pai(indice)].chave){
+    if(indice > 1 && h->vetor[indice].chave < h->vetor[pai(indice)].chave){
         sobeFila(h, indice);
-    }else{
+    } else{
         desceFila(h, indice);
     }
 }
@@ -185,7 +185,7 @@ void imprimir(Heap *h){
     int i;
 
     printf("HEAP: ");
-    for(i = 0; i < h->tam; i++){
+    for(i = 1; i <= h->tam; i++){
         printf("%d ", h->vetor[i].chave);
     }
     printf("\n");

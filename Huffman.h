@@ -22,8 +22,6 @@
 
 #include <stdint.h>
 
-/* Contrato do arquivo binario .huff (ver FORMATO_HUFF.md).
- * Layout: [MAGIC 4B][PADDING 1B][FREQS 1024B][CORPO nB] */
 #define HUFF_MAGIC              "HUFF"
 #define HUFF_MAGIC_BYTES        4
 #define HUFF_PADDING_BYTES      1
@@ -31,6 +29,8 @@
 #define HUFF_FREQ_ENTRADA_BYTES 4
 #define HUFF_TABELA_BYTES       (HUFF_NUM_SIMBOLOS * HUFF_FREQ_ENTRADA_BYTES)
 #define HUFF_CABECALHO_BYTES    (HUFF_MAGIC_BYTES + HUFF_PADDING_BYTES + HUFF_TABELA_BYTES)
+
+#define CODIGO_MAX 256
 
 typedef struct noHuffman NoHuffman;
 
@@ -54,5 +54,9 @@ int ehFolha(NoHuffman *no);
 NoHuffman *construirArvoreHuffman(int frequencias[256]);
 
 void liberarArvore(NoHuffman *raiz);
+
+void gerarTabelaCodigos(NoHuffman *raiz, char tabela[256][CODIGO_MAX], char codigoAtual[CODIGO_MAX], int profundidade);
+
+void imprimeArvore(NoHuffman *raiz, int nivel);
 
 #endif /* HUFFMAN_H */

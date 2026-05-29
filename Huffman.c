@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "Huffman.h"
 #include "heap.h"
 
@@ -147,4 +148,62 @@ void liberarArvore(NoHuffman *raiz) {
     liberarArvore(raiz->dir);
 
     free(raiz);
+}
+
+void gerarTabelaCodigos(NoHuffman *raiz, char tabela[256][CODIGO_MAX], char codigoAtual[CODIGO_MAX], int profundidade){
+    int i;
+
+    if(raiz == NULL){
+        return;
+    }
+
+    if(profundidade == 0){
+        for(i = 0; i < 256; i++){
+            tabela[i][0] = '\0';
+        }
+    }
+
+    if(ehFolha(raiz)){
+        codigoAtual[profundidade] = '\0';
+        strcpy(tabela[raiz->caractere], codigoAtual);
+        return;
+    }
+
+
+    codigoAtual[profundidade] = '0';
+    gerarTabelaCodigos(raiz->esq, tabela, codigoAtual, profundidade + 1);
+
+    codigoAtual[profundidade] = '1';
+    gerarTabelaCodigos(raiz->dir, tabela, codigoAtual, profundidade + 1);
+}
+
+void imprimeArvore(NoHuffman *raiz, int nivel){
+    int i;
+
+    if(raiz == NULL){
+        return;
+    }
+
+    for(i = 0; i < nivel; i++){
+        printf(" ");
+    }
+
+    if(ehFolha(raiz)){
+        if(raiz->caractere == '\n'){
+            printf("'\\n' : %d\n", raiz->frequencia);
+        } else if(raiz->caractere == '\t'){
+            printf("'\\t' : %d\n", raiz->frequencia);
+        } else if(raiz->caractere == ' '){
+            printf("' ' : %d\n", raiz->frequencia);
+        } else if(raiz->caractere >= 32 && raiz->caractere <= 126){
+            printf("'%c' : %d\n", raiz->caractere, raiz->frequencia);
+        } else{
+            printf("%d : %d\n", raiz->caractere, raiz->frequencia);
+        }
+    } else{
+        printf("%d\n", raiz->frequencia);
+    }
+
+    imprimeArvore(raiz->esq, nivel + 1);
+    imprimeArvore(raiz->dir, nivel + 1);
 }

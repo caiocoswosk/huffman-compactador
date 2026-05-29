@@ -207,3 +207,166 @@ void imprimeArvore(NoHuffman *raiz, int nivel){
     imprimeArvore(raiz->esq, nivel + 1);
     imprimeArvore(raiz->dir, nivel + 1);
 }
+
+static int escreverCabecalho(FILE *saida, int frequencias[256], unsigned char padding){
+    if(fwrite(HUFF_MAGIC, 1, HUFF_MAGIC_BYTES, saida) != HUFF_MAGIC_BYTES){
+        return 0;
+    }
+
+    if(fputc(padding, saida) == EOF){
+        return 0;
+    }
+
+    for(int i = 0; i < 256; i++){
+        uint32_t frequencia = (uint32_t)frequencias[i];
+
+        if(fwrite(&frequencia, sizeof(uint32_t), 1, saida) != 1){
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int atualizarPadding(FILE *saida, unsigned char padding){
+    if(fseek(saida, HUFF_MAGIC_BYTES, SEEK_SET) != 0){
+        return 0;
+    }
+
+    if(fputc(padding, saida) == EOF){
+        return 0;
+    }
+
+    return 1;
+}
+
+static int escreverBit(FILE *saida, int bit, unsigned char *buffer, int *bitsNoBuffer){
+    *buffer = (unsigned char)(*buffer << 1);
+
+    if(bit == 1){
+        *buffer = (unsigned char)(*buffer | 1);
+    }
+
+    (*bitsNoBuffer)++;
+
+    if(*bitsNoBuffer == 8){
+        if(fputc(*buffer, saida) == EOF){
+            return 0;
+        }
+
+        *buffer = 0;
+        *bitsNoBuffer = 0;
+    }
+
+    return 1;
+}
+
+static int escreverCodigo(FILE *saida, const char *codigo, unsigned char *buffer, int *bitsNoBuffer){
+    for(int i = 0; codigo[i] != '\0'; i++){
+        int bit = (codigo[i] == '1') ? 1 : 0;
+
+        if(!escreverBit(saida, bit, buffer, bitsNoBuffer)){
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int finalizarBuffer(FILE *saida, unsigned char *buffer, int *bitsNoBuffer, unsigned char *padding){
+    *padding = 0;
+
+    if(*bitsNoBuffer > 0){
+        *padding = (unsigned char)(8 - *bitsNoBuffer);
+        *buffer = (unsigned char)(*buffer << *padding);
+
+        if(fputc(*buffer, saida) == EOF){
+            return 0;
+        }
+
+        *buffer = 0;
+        *bitsNoBuffer = 0;
+    }
+
+    return 1;
+}
+
+int compactarArquivo(const char *nomeEntrada, const char *nomeSaida){
+    int frequencias[256];
+    char tabela[256][CODIGO_MAX];
+    char codigoAtual[CODIGO_MAX];
+    NoHuffman *raiz;
+    FILE *entrada;
+    FILE *saida;
+    unsigned char buffer = 0;
+    unsigned char padding = 0;
+    int bitsNoBuffer = 0;
+    int c;
+
+    if(!calcularFrequencias(nomeEntrada, frequencias)){
+        return 0;
+    }
+
+    raiz = construirArvoreHuffman(frequencias);
+
+    entrada = fopen(nomeEntrada, "rb");
+    if(entrada == NULL){
+        printf("Erro ao abrir arquivo de entrada.\n");
+        liberarArvore(raiz);
+        return 0;
+    }
+
+    saida = fopen(nomeSaida, "wb");
+    if(saida == NULL){
+        printf("Erro ao abrir arquivo de saida.\n");
+        fclose(entrada);
+        liberarArvore(raiz);
+        return 0;
+    }
+
+    if(!escreverCabecalho(saida, frequencias, 0)){
+        printf("Erro ao escrever cabecalho do arquivo compactado.\n");
+        fclose(entrada);
+        fclose(saida);
+        liberarArvore(raiz);
+        return 0;
+    }
+
+    if(raiz != NULL){
+        gerarTabelaCodigos(raiz, tabela, codigoAtual, 0);
+
+        while((c = fgetc(entrada)) != EOF){
+            unsigned char caractere = (unsigned char)c;
+
+            if(!escreverCodigo(saida, tabela[caractere], &buffer, &bitsNoBuffer)){
+                printf("Erro ao escrever dados compactados.\n");
+                fclose(entrada);
+                fclose(saida);
+                liberarArvore(raiz);
+                return 0;
+            }
+        }
+
+        if(!finalizarBuffer(saida, &buffer, &bitsNoBuffer, &padding)){
+            printf("Erro ao finalizar dados compactados.\n");
+            fclose(entrada);
+            fclose(saida);
+            liberarArvore(raiz);
+            return 0;
+        }
+    }
+
+    if(!atualizarPadding(saida, padding)){
+        printf("Erro ao atualizar padding do arquivo compactado.\n");
+        fclose(entrada);
+        fclose(saida);
+        liberarArvore(raiz);
+        return 0;
+    }
+
+    fclose(entrada);
+    fclose(saida);
+    liberarArvore(raiz);
+
+    return 1;
+}

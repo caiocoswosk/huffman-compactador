@@ -185,7 +185,7 @@ void imprimeArvore(NoHuffman *raiz, int nivel){
     }
 
     for(i = 0; i < nivel; i++){
-        printf(" ");
+        printf("  ");
     }
 
     if(ehFolha(raiz)){
@@ -367,6 +367,141 @@ int compactarArquivo(const char *nomeEntrada, const char *nomeSaida){
     fclose(entrada);
     fclose(saida);
     liberarArvore(raiz);
+
+    return 1;
+}
+
+int descompactarArquivo(const char *nomeEntrada, const char *nomeSaida){
+    FILE *entrada;
+    FILE *saida;
+    char magic[HUFF_MAGIC_BYTES];
+    unsigned char padding;
+    uint32_t frequencia32[256];
+    int frequencias[256];
+    long tamArquivo;
+    long tamCorpo;
+    long bitsValidos;
+    long bitsConsumidos = 0;
+    NoHuffman *raiz;
+    NoHuffman *atual;
+    int byte, i, bit;
+
+
+    entrada = fopen(nomeEntrada, "rb");
+
+    if(entrada == NULL){
+        printf("Erro ao abrir arquivo compactado!\n");
+        return 0;
+    }
+
+    saida = fopen (nomeSaida, "wb");
+    if(saida == NULL){
+        printf("Erro ao criar o aquivo de saida!\n");
+        fclose(entrada);
+        return 0;
+    }
+
+    if((fread(magic, 1, HUFF_MAGIC_BYTES, entrada) != HUFF_MAGIC_BYTES) || (memcmp(magic, HUFF_MAGIC, HUFF_MAGIC_BYTES) != 0)){
+        printf("Arquivo invalido\n");
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    if(fread(&padding, 1, 1, entrada) != 1 || padding > 7){
+        printf("Padding invalido\n");
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    if(fread(frequencia32, sizeof(uint32_t), 256, entrada) != 256){
+        printf("Tabela de frequencias invalida\n");
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    for(i = 0; i < 256; i++){
+        frequencias[i] = (int)frequencia32[i];
+    }
+
+    if(fseek(entrada, 0, SEEK_END) != 0){
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    tamArquivo = ftell(entrada);
+    if(tamArquivo < 0){
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    tamCorpo = tamArquivo - HUFF_CABECALHO_BYTES;
+    bitsValidos = tamCorpo * 8 - padding;
+
+    if(tamCorpo < 0 || bitsValidos < 0){
+        printf("Arquivo compactado corrompido.\n");
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+
+    if(fseek(entrada, HUFF_CABECALHO_BYTES, SEEK_SET) != 0){
+        fclose(entrada);
+        fclose(saida);
+        return 0;
+    }
+
+    raiz = construirArvoreHuffman(frequencias);
+
+    if(raiz == NULL){
+        fclose(entrada);
+        fclose(saida);
+        return 1;
+    }
+
+    atual = raiz;
+
+    while(bitsConsumidos < bitsValidos && (byte = fgetc(entrada)) != EOF){
+        for(bit = 7; bit >= 0 && bitsConsumidos < bitsValidos; bit--){
+            int valorBit = (byte >> bit) & 1;
+
+            if(valorBit == 0){
+                atual = atual->esq;
+            } else{
+                atual = atual->dir;
+            }
+
+            if(atual == NULL){
+                printf("Erro ao percorrer a arvore. Arquivo corrompido.\n");
+                liberarArvore(raiz);
+                fclose(entrada);
+                fclose(saida);
+                return 0;
+            }
+
+            if(ehFolha(atual)){
+                if(fputc(atual->caractere, saida) == EOF){
+                    liberarArvore(raiz);
+                    fclose(entrada);
+                    fclose(saida);
+                    return 0;
+                }
+
+                atual = raiz;
+            }
+
+            bitsConsumidos++;
+        }
+    }
+
+    liberarArvore(raiz);
+    fclose(entrada);
+    fclose(saida);
 
     return 1;
 }

@@ -61,4 +61,6 @@ void imprimeArvore(NoHuffman *raiz, int nivel);
 
 int compactarArquivo(const char *nomeEntrada, const char *nomeSaida);
 
+int descompactarArquivo(const char *nomeEntrada, const char *nomeSaida);
+
 #endif /* HUFFMAN_H */

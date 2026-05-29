@@ -94,17 +94,14 @@ static int ler_nome_arquivo(const char *rotulo, char *destino, size_t capacidade
     return 1;
 }
 
-static void opcao_comprimir(char *arquivo_entrada, char *arquivo_saida,
-                            int *entrada_definida) {
+static void opcao_comprimir(char *arquivo_entrada, char *arquivo_saida, int *entrada_definida) {
     char entrada[TAM_NOME_ARQ];
     char saida[TAM_NOME_ARQ];
 
-    if (!ler_nome_arquivo("Arquivo de entrada (.txt): ",
-                          entrada, sizeof entrada)) {
+    if (!ler_nome_arquivo("Arquivo de entrada (.txt): ", entrada, sizeof entrada)) {
         return;
     }
-    if (!ler_nome_arquivo("Arquivo de saida: ",
-                          saida, sizeof saida)) {
+    if (!ler_nome_arquivo("Arquivo de saida: ", saida, sizeof saida)) {
         return;
     }
 
@@ -112,9 +109,11 @@ static void opcao_comprimir(char *arquivo_entrada, char *arquivo_saida,
     strcpy(arquivo_saida, saida);
     *entrada_definida = 1;
 
-    printf("\n[T04] Comprimir '%s' -> '%s' ainda nao implementado.\n",
-           arquivo_entrada, arquivo_saida);
-    printf("      Sera ligado em T15 apos T07/T12 ficarem prontas.\n");
+    if (compactarArquivo(arquivo_entrada, arquivo_saida)) {
+        printf("\nArquivo compactado com sucesso: %s\n", arquivo_saida);
+    } else {
+        printf("\nErro ao compactar o arquivo.\n");
+    }
 }
 
 static void opcao_contagem(const char *arquivo_entrada, int entrada_definida) {
@@ -122,9 +121,14 @@ static void opcao_contagem(const char *arquivo_entrada, int entrada_definida) {
         printf("\nNenhum arquivo foi informado ainda. Use a opcao 1 primeiro.\n");
         return;
     }
-    printf("\n[T04] Contagem de ocorrencias de '%s' ainda nao implementada.\n",
-           arquivo_entrada);
-    printf("      Sera ligada em T15 apos T03 ficar pronta.\n");
+
+    int frequencias[256];
+
+    if (calcularFrequencias(arquivo_entrada, frequencias)) {
+        imprimirFrequencias(frequencias);
+    } else {
+        printf("\nErro ao calcular frequencias.\n");
+    }
 }
 
 static void opcao_imprimir_arvore(const char *arquivo_entrada, int entrada_definida) {
@@ -132,27 +136,40 @@ static void opcao_imprimir_arvore(const char *arquivo_entrada, int entrada_defin
         printf("\nNenhum arquivo foi informado ainda. Use a opcao 1 primeiro.\n");
         return;
     }
-    printf("\n[T04] Impressao da arvore de Huffman de '%s' ainda nao implementada.\n",
-           arquivo_entrada);
-    printf("      Sera ligada em T15 apos T07/T10 ficarem prontas.\n");
+
+    int frequencias[256];
+
+    if (!calcularFrequencias(arquivo_entrada, frequencias)) { 
+        printf("\nErro ao calcular frequencias.\n");
+        return;
+    }
+
+    NoHuffman *raiz = construirArvoreHuffman(frequencias);
+    if (raiz == NULL) {
+        printf("\nArquivo vazio. Nao ha arvore para imprimir.\n");
+        return;
+    }
+
+    imprimeArvore(raiz, 0);
+    liberarArvore(raiz);
 }
 
 static void opcao_descomprimir(void) {
     char entrada[TAM_NOME_ARQ];
     char saida[TAM_NOME_ARQ];
 
-    if (!ler_nome_arquivo("Arquivo compactado: ",
-                          entrada, sizeof entrada)) {
+    if (!ler_nome_arquivo("Arquivo compactado: ", entrada, sizeof entrada)) {
         return;
     }
-    if (!ler_nome_arquivo("Arquivo de saida: ",
-                          saida, sizeof saida)) {
+    if (!ler_nome_arquivo("Arquivo de saida: ", saida, sizeof saida)) {
         return;
     }
 
-    printf("\n[T04] Descomprimir '%s' -> '%s' ainda nao implementado.\n",
-           entrada, saida);
-    printf("      Sera ligado em T15 apos T13 ficar pronta.\n");
+    if (descompactarArquivo(entrada, saida)) {
+        printf("\nArquivo descompactado com sucesso: %s\n", saida);
+    } else {
+        printf("\nErro ao descompactar o arquivo.\n");
+    }
 }
 
 int main(void) {
@@ -175,8 +192,7 @@ int main(void) {
 
         switch (opcao) {
             case 1:
-                opcao_comprimir(arquivo_entrada, arquivo_saida,
-                                &entrada_definida);
+                opcao_comprimir(arquivo_entrada, arquivo_saida, &entrada_definida);
                 break;
             case 2:
                 opcao_contagem(arquivo_entrada, entrada_definida);

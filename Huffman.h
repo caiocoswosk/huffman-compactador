@@ -20,6 +20,18 @@
 #ifndef HUFFMAN_H
 #define HUFFMAN_H
 
+#include <stdint.h>
+
+/* Contrato do arquivo binario .huff (ver FORMATO_HUFF.md).
+ * Layout: [MAGIC 4B][PADDING 1B][FREQS 1024B][CORPO nB] */
+#define HUFF_MAGIC              "HUFF"
+#define HUFF_MAGIC_BYTES        4
+#define HUFF_PADDING_BYTES      1
+#define HUFF_NUM_SIMBOLOS       256
+#define HUFF_FREQ_ENTRADA_BYTES 4
+#define HUFF_TABELA_BYTES       (HUFF_NUM_SIMBOLOS * HUFF_FREQ_ENTRADA_BYTES)
+#define HUFF_CABECALHO_BYTES    (HUFF_MAGIC_BYTES + HUFF_PADDING_BYTES + HUFF_TABELA_BYTES)
+
 typedef struct noHuffman NoHuffman;
 
 struct noHuffman {
